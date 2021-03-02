@@ -16,6 +16,8 @@ namespace UsefulTrophies
 
         public static bool CanConsumeBosses = true;
 
+        public static bool CanConsumeAnything = false;
+
         // Dictionary of every enemy trophy type.
         // Full Item name would be $item_trophy_deer
         public static Dictionary<string, float> TrophyXPDict = new Dictionary<string, float>
@@ -75,11 +77,15 @@ namespace UsefulTrophies
             ConfigDefinition bossConsumption =
                 new ConfigDefinition("BossConsumption", "CanConsumeBosses");
 
+            ConfigDefinition consumeAnything =
+                new ConfigDefinition("GluttonyTrashcan", "CanConsumeAnything");
+            
             foreach (var config in configList)
             {
                 TrophyXPDict[config.Key] = Config.Bind(config, TrophyXPDict[config.Key]).Value;
             }
             CanConsumeBosses = Config.Bind(bossConsumption, true).Value;
+            CanConsumeAnything = Config.Bind(consumeAnything, false).Value;
 
             Harmony.PatchAll();
         }

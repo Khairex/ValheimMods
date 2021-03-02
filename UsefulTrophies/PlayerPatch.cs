@@ -15,11 +15,17 @@ namespace UsefulTrophies
             string itemName = item.m_shared.m_name;
 
             // Only Override function for Trophy Items
-            if (itemName.Contains("$item_trophy_"))
+            bool isTrophy = itemName.Contains("$item_trophy_");
+            
+            if (isTrophy || UsefulTrophies.CanConsumeAnything)
             {
-                string enemy = itemName.Substring(13);
+                string enemy = "";
 
-                Debug.Log($"Use {enemy} trophy!");
+                if (isTrophy)
+                {
+                    itemName.Substring(13);
+                    Debug.Log($"Use {enemy} trophy!");
+                }
 
                 // Skip Boss Trophy if Unconsumable
                 if (!UsefulTrophies.CanConsumeBosses && UsefulTrophies.BossEnemies.Contains(enemy))
@@ -48,22 +54,38 @@ namespace UsefulTrophies
                     }
                 }
 
-                Debug.Log($"Consume {enemy} trophy!");
+                if (item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Consumable)
+                {
+                    if (!__instance.ConsumeItem(inventory, item))
+                        return false;
+                    __instance.m_consumeItemEffects.Create(Player.m_localPlayer.transform.position, Quaternion.identity);
+                    ___m_zanim.SetTrigger("eat");
+                    return false;
+                }
+
+                Debug.Log($"Consume {itemName}!");
 
                 // Get a Random Skill from the Player's Skill Pool
                 List<Skills.Skill> skills = __instance.GetSkills().GetSkillList();
                  Skills.SkillType randomSkill = skills[UnityEngine.Random.Range(0, skills.Count)].m_info.m_skill;
 
                 float skillFactor = 10f;
-                if (UsefulTrophies.TrophyXPDict.TryGetValue(enemy, out float dictSkillFactor))
+                if (isTrophy)
                 {
-                    skillFactor = dictSkillFactor;
+                    if (UsefulTrophies.TrophyXPDict.TryGetValue(enemy, out float dictSkillFactor))
+                    {
+                        skillFactor = dictSkillFactor;
+                    }
+                    else
+                    {
+                        Debug.Log($"Unknown trophy for {enemy}!");
+                    }
                 }
                 else
                 {
-                    Debug.Log($"Unknown trophy for {enemy}!");
+                    
                 }
-
+                
                 // Increase Skill by Configured Skill Factor
                 __instance.RaiseSkill(randomSkill, skillFactor);
                 Debug.Log($"Raised {randomSkill} by {skillFactor}");
