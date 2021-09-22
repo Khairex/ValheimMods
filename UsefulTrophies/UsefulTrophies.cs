@@ -6,7 +6,7 @@ using HarmonyLib;
 
 namespace UsefulTrophies
 {
-    [BepInPlugin(Id, "Useful Trophies Mod", "1.0.1")]
+    [BepInPlugin(Id, "Useful Trophies Mod", "1.1.1")]
     [BepInProcess("valheim.exe")]
     public class UsefulTrophies : BaseUnityPlugin
     {
