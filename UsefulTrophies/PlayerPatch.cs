@@ -70,7 +70,7 @@ namespace UsefulTrophies
 
                 // Consume Item 
                 inventory.RemoveOneItem(item);
-                __instance.m_consumeItemEffects.Create(Player.m_localPlayer.transform.position, Quaternion.identity, null, 1f, -1);
+                __instance.m_consumeItemEffects.Create(Player.m_localPlayer.transform.position, Quaternion.identity, null, 1f);
                 ___m_zanim.SetTrigger("eat");
 
                 // Notify Player of the Stat Increase
