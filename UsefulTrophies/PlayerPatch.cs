@@ -52,7 +52,7 @@ namespace UsefulTrophies
 
                 // Get a Random Skill from the Player's Skill Pool
                 List<Skills.Skill> skills = __instance.GetSkills().GetSkillList();
-                 Skills.SkillType randomSkill = skills[UnityEngine.Random.Range(0, skills.Count)].m_info.m_skill;
+                Skills.Skill randomSkill = skills[UnityEngine.Random.Range(0, skills.Count)];
 
                 float skillFactor = 10f;
                 if (UsefulTrophies.TrophyXPDict.TryGetValue(enemy, out float dictSkillFactor))
@@ -63,10 +63,22 @@ namespace UsefulTrophies
                 {
                     Debug.Log($"Unknown trophy for {enemy}!");
                 }
+                
+                Debug.Log($"Raising {randomSkill.m_info.m_skill} by {skillFactor}");
 
+                float req = GetNextLevelRequirement(randomSkill) - randomSkill.m_accumulator;
+                
                 // Increase Skill by Configured Skill Factor
-                __instance.RaiseSkill(randomSkill, skillFactor);
-                Debug.Log($"Raised {randomSkill} by {skillFactor}");
+                __instance.RaiseSkill(randomSkill.m_info.m_skill, skillFactor);
+                skillFactor -= req;
+
+                // Handle multi-levelUps
+                while (skillFactor > 0f)
+                {
+                    req = GetNextLevelRequirement(randomSkill);
+                    __instance.RaiseSkill(randomSkill.m_info.m_skill, skillFactor);
+                    skillFactor -= req;
+                }
 
                 // Consume Item 
                 inventory.RemoveOneItem(item);
@@ -74,11 +86,13 @@ namespace UsefulTrophies
                 ___m_zanim.SetTrigger("eat");
 
                 // Notify Player of the Stat Increase
-                __instance.Message(MessageHud.MessageType.Center, $"You feel better at {randomSkill}", 0, null);
+                __instance.Message(MessageHud.MessageType.Center, $"You feel better with {randomSkill.m_info.m_skill}", 0, null);
                 return false;
             }
 
             return true;
         }
+        
+        private static float GetNextLevelRequirement(Skills.Skill skill) => (float) ((double) Mathf.Pow(skill.m_level + 1f, 1.5f) * 0.5 + 0.5);
     }
 }
