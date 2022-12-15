@@ -16,6 +16,7 @@ namespace UsefulTrophies
 
         public static bool CanConsumeBosses = true;
         public static bool CanConsumeBossSummonItems = true;
+        public static bool EnableSellingTrophies = true;
         public static float BossPowerTime = 720f;
 
         // Dictionary of every enemy trophy type.
@@ -51,18 +52,64 @@ namespace UsefulTrophies
             { "growth", 50f },
             { "deathsquito", 80f },
             { "serpent", 150f },
-            { "eikthyr", 30f },
-            { "elder", 80f },
-            { "bonemass", 300f },
-            { "dragonqueen", 500f },
-            { "goblinking", 700f },
             { "hare", 50f },
             { "gjall", 100f },
             { "tick", 80f },
             { "dvergr", 300f },
             { "seeker", 150f },
             { "seekerbrute", 300f },
+            { "eikthyr", 30f },
+            { "elder", 80f },
+            { "bonemass", 300f },
+            { "dragonqueen", 500f },
+            { "goblinking", 700f },
             { "seekerqueen", 1000f },
+        };
+
+        // Full Item name would be $item_trophy_deer
+        public static Dictionary<string, int> TrophyGoldValueDict = new Dictionary<string, int>
+        {
+            { "deer", 15 },
+            { "boar", 10 },
+            { "neck", 10 },
+            { "greydwarf", 10 },
+            { "greydwarfbrute", 15 },
+            { "greydwarfshaman", 15 },
+            { "skeleton", 10 },
+            { "skeletonpoison", 15 },
+            { "troll", 50 },
+            { "surtling", 15 },
+            { "leech", 15 },
+            { "draugr", 15 },
+            { "draugrelite", 30 },
+            { "blob", 20 },
+            { "wraith", 30 },
+            { "abomination", 100 },
+            { "wolf", 25 },
+            { "fenring", 30 },
+            { "hatchling", 35 },
+            { "sgolem", 100 },
+            { "ulv", 50 },
+            { "cultist", 50 },
+            { "goblin", 35 },
+            { "goblinbrute", 50 },
+            { "goblinshaman", 50 },
+            { "lox", 150 },
+            { "growth", 50 },
+            { "deathsquito", 25 },
+            { "serpent", 250 },
+            { "hare", 40 },
+            { "gjall", 150 },
+            { "tick", 50 },
+            { "dvergr", 300 },
+            { "seeker", 50 },
+            { "seekerbrute", 100 },
+            { "eikthyr", 0 },
+            { "elder", 0 },
+            { "bonemass", 0 },
+            { "dragonqueen", 0 },
+            { "goblinking", 0 },
+            { "seekerqueen", 0 },
         };
 
         // Boss trophies are optionally handled differently
@@ -119,6 +166,10 @@ namespace UsefulTrophies
                 new ConfigDefinition("BossConsumption", "BossPowerTimeSeconds");
             BossPowerTime = Config.Bind(bossPowerTime, 720f).Value;
 
+            ConfigDefinition sellTrophies =
+                new ConfigDefinition("GoldValue", "EnableSellingTrophies");
+            EnableSellingTrophies = Config.Bind(sellTrophies, true).Value;
+            
             // Secondary Time Config
             List<ConfigDefinition> secondaryTimeList = new List<ConfigDefinition>();
             foreach (var item in SecondaryPowerTime.Keys)
@@ -144,6 +195,20 @@ namespace UsefulTrophies
                 TrophyXPDict[config.Key] = Config.Bind(config, TrophyXPDict[config.Key]).Value;
             }
 
+            // Gold Config
+            List<ConfigDefinition> goldConfigList = new List<ConfigDefinition>();
+
+            foreach (var enemy in TrophyGoldValueDict.Keys)
+            {
+                goldConfigList.Add(new ConfigDefinition("GoldValue", enemy));
+            }
+            
+            foreach (var config in goldConfigList)
+            {
+                TrophyGoldValueDict[config.Key] = Config.Bind(config, TrophyGoldValueDict[config.Key]).Value;
+            }
+            
+            
             Harmony.PatchAll();
         }
     }
