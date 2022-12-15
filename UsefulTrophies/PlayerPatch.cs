@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using HarmonyLib;
-using BepInEx.Configuration;
 using UnityEngine;
 
 namespace UsefulTrophies
@@ -14,19 +13,69 @@ namespace UsefulTrophies
         {
             string itemName = item.m_shared.m_name;
 
+            if (UsefulTrophies.CanConsumeBossSummonItems && UsefulTrophies.SecondaryPowerDict.TryGetValue(itemName, out string powerName))
+            {
+                StatusEffect bossPower = ObjectDB.instance.GetStatusEffect(powerName);
+                if (!UsefulTrophies.SecondaryPowerTime.TryGetValue(itemName, out float powerTime))
+                {
+                    powerTime = 120f;
+                }
+                
+                ApplyStatusEffect(bossPower.Clone(), powerTime, __instance.transform.position);
+
+                if (!itemName.Contains("$item_trophy_"))
+                {
+                    // Consume Item 
+                    Debug.Log($"Consume {itemName} Secondary Boss Item!");
+                    inventory.RemoveOneItem(item);
+                    __instance.m_consumeItemEffects.Create(Player.m_localPlayer.transform.position, Quaternion.identity, null, 1f, -1);
+                    ___m_zanim.SetTrigger("eat");
+                    return false;
+                }
+            }
+            
             // Only Override function for Trophy Items
             if (itemName.Contains("$item_trophy_"))
             {
                 string enemy = itemName.Substring(13);
 
-                Debug.Log($"Use {enemy} trophy!");
-
-                // Skip Boss Trophy if Unconsumable
-                if (!UsefulTrophies.CanConsumeBosses && UsefulTrophies.BossEnemies.Contains(enemy))
+                if (UsefulTrophies.BossEnemies.Contains(enemy))
                 {
-                    return true;
-                }
+                    if (!UsefulTrophies.CanConsumeBosses) return true;
+                    
+                    if (UsefulTrophies.BossPowerDict.TryGetValue(enemy, out powerName))
+                    {
+                        StatusEffect bossPower = ObjectDB.instance.GetStatusEffect(powerName);
+                            
+                        // Protection against eating boss heads near unactivated boss stones
+                        BossStone[] bossStones = GameObject.FindObjectsOfType<BossStone>();
+                        
+                        // If we are near any boss stones, the find will find some
+                        if (bossStones.Length > 1 && bossStones[0].m_itemStand.m_netViewOverride.IsValid())
+                        {
+                            // There may be duplicate stones, so find at least one active stone to confirm we have it handed in
+                            bool bossActived = false;
+                            foreach (var stone in bossStones)
+                            {
+                                if (stone.IsActivated() && bossPower.m_name == stone.m_itemStand.m_guardianPower.m_name)
+                                {
+                                    bossActived = true;
+                                    break;
+                                }
+                            }
 
+                            if (!bossActived)
+                            {
+                                Debug.Log("Prevented Player from consuming boss trophy near BossStone");
+                                return true;
+                            }
+                        }
+                        
+                        // Copy power so we dont effect the original data
+                        ApplyStatusEffect(bossPower.Clone(), UsefulTrophies.BossPowerTime, __instance.transform.position);
+                    }
+                }
+                
                 if (inventory == null)
                 {
                     inventory = ___m_inventory;
@@ -91,6 +140,17 @@ namespace UsefulTrophies
             }
 
             return true;
+        }
+
+        private static void ApplyStatusEffect(StatusEffect statusEffect, float time, Vector3 position)
+        {
+            statusEffect.m_ttl = time;
+            List<Player> players = new List<Player>();
+            Player.GetPlayersInRange(position, 10f, players);
+            foreach (Player player in players)
+            {
+                player.GetSEMan().AddStatusEffect(statusEffect, true);
+            }
         }
         
         private static float GetNextLevelRequirement(Skills.Skill skill) => (float) ((double) Mathf.Pow(skill.m_level + 1f, 1.5f) * 0.5 + 0.5);

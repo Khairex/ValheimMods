@@ -15,6 +15,8 @@ namespace UsefulTrophies
         public Harmony Harmony { get; } = new Harmony(Id);
 
         public static bool CanConsumeBosses = true;
+        public static bool CanConsumeBossSummonItems = true;
+        public static float BossPowerTime = 720f;
 
         // Dictionary of every enemy trophy type.
         // Full Item name would be $item_trophy_deer
@@ -22,12 +24,12 @@ namespace UsefulTrophies
         {
             { "deer", 8f },
             { "boar", 4f },
-            { "neck", 5f },
+            { "neck", 10f },
             { "greydwarf", 5f },
-            { "greydwarfbrute", 15f },
+            { "greydwarfbrute", 25f },
             { "greydwarfshaman", 15f },
             { "skeleton", 10f },
-            { "skeletonpoison", 15f },
+            { "skeletonpoison", 25f },
             { "troll", 30f },
             { "surtling", 25f },
             { "leech", 25f },
@@ -35,7 +37,7 @@ namespace UsefulTrophies
             { "draugrelite", 30f },
             { "blob", 20f },
             { "wraith", 30f },
-            { "abomination", 40f },
+            { "abomination", 100f },
             { "wolf", 35f },
             { "fenring", 40f },
             { "hatchling", 40f },
@@ -45,15 +47,15 @@ namespace UsefulTrophies
             { "goblin", 50f },
             { "goblinbrute", 50f },
             { "goblinshaman", 50f },
-            { "lox", 100f },
+            { "lox", 120f },
             { "growth", 50f },
             { "deathsquito", 80f },
-            { "serpent", 100f },
-            { "eikthyr", 25f },
-            { "elder", 50f },
-            { "bonemass", 150f },
-            { "dragonqueen", 300f },
-            { "goblinking", 500f },
+            { "serpent", 150f },
+            { "eikthyr", 30f },
+            { "elder", 80f },
+            { "bonemass", 300f },
+            { "dragonqueen", 500f },
+            { "goblinking", 700f },
             { "hare", 50f },
             { "gjall", 100f },
             { "tick", 80f },
@@ -69,29 +71,78 @@ namespace UsefulTrophies
             "eikthyr",
             "elder",
             "bonemass",
-            "dragonqueen",
+            "dragonqueen", 
             "goblinking",
             "seekerqueen",
         };
-
+        
+        public static Dictionary<string, string> BossPowerDict = new Dictionary<string, string>()
+        {
+            {"eikthyr", "GP_Eikthyr"},
+            {"elder", "GP_TheElder"},
+            {"bonemass", "GP_Bonemass"},
+            {"dragonqueen", "GP_Moder"},
+            {"goblinking", "GP_Yagluth"},
+            {"seekerqueen", "GP_Queen"},
+        };
+        
+        public static Dictionary<string, string> SecondaryPowerDict = new Dictionary<string, string>()
+        {
+            {"$item_trophy_deer", "GP_Eikthyr"},
+            {"$item_ancientseed", "GP_TheElder"},
+            {"$item_witheredbone", "GP_Bonemass"},
+            {"$item_dragonegg", "GP_Moder"},
+            {"$item_goblintotem", "GP_Yagluth"},
+        };
+        
+        public static Dictionary<string, float> SecondaryPowerTime = new Dictionary<string, float>
+        {
+            {"$item_trophy_deer", 120},
+            {"$item_ancientseed", 120},
+            {"$item_witheredbone", 120},
+            {"$item_dragonegg", 300},
+            {"$item_goblintotem", 120},
+        };
+        
         void Awake()
         {
             // Setup/Apply Config file
-            List<ConfigDefinition> configList = new List<ConfigDefinition>();
+            ConfigDefinition bossConsumption =
+                new ConfigDefinition("BossConsumption", "CanConsumeBosses");
+            CanConsumeBosses = Config.Bind(bossConsumption, true).Value;
+
+            ConfigDefinition bossSummonConsumption =
+                new ConfigDefinition("BossConsumption", "CanConsumeBossSummonItems");
+            CanConsumeBossSummonItems = Config.Bind(bossSummonConsumption, true).Value;
+            
+            ConfigDefinition bossPowerTime =
+                new ConfigDefinition("BossConsumption", "BossPowerTimeSeconds");
+            BossPowerTime = Config.Bind(bossPowerTime, 720f).Value;
+
+            // Secondary Time Config
+            List<ConfigDefinition> secondaryTimeList = new List<ConfigDefinition>();
+            foreach (var item in SecondaryPowerTime.Keys)
+            {
+                secondaryTimeList.Add(new ConfigDefinition("BossSummonItemTimeSeconds", item));
+            }
+            
+            foreach (var config in secondaryTimeList)
+            {
+                SecondaryPowerTime[config.Key] = Config.Bind(config, SecondaryPowerTime[config.Key]).Value;
+            }
+            
+            // Xp Config
+            List<ConfigDefinition> xpConfigList = new List<ConfigDefinition>();
 
             foreach (var enemy in TrophyXPDict.Keys)
             {
-                configList.Add(new ConfigDefinition("ExpScaling", enemy));
+                xpConfigList.Add(new ConfigDefinition("ExpScaling", enemy));
             }
-
-            ConfigDefinition bossConsumption =
-                new ConfigDefinition("BossConsumption", "CanConsumeBosses");
-
-            foreach (var config in configList)
+            
+            foreach (var config in xpConfigList)
             {
                 TrophyXPDict[config.Key] = Config.Bind(config, TrophyXPDict[config.Key]).Value;
             }
-            CanConsumeBosses = Config.Bind(bossConsumption, true).Value;
 
             Harmony.PatchAll();
         }
